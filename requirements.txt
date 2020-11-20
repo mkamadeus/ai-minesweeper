@@ -1,0 +1,6 @@
+autopep8==1.5.4
+cffi==1.14.3
+clipspy==0.3.3
+pycodestyle==2.6.0
+pycparser==2.20
+toml==0.10.2

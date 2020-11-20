@@ -1,11 +1,11 @@
 from typing import List
 import clips
-from clips.facts import fact_pp_string
+
 
 class ClipsInstance:
     def __init__(self) -> None:
-        self.env = clips.Environment();
-    
+        self.env = clips.Environment()
+
     def define_fact(self, name: str, param: List[int]) -> None:
         fact_string = f'({name} {" ".join(list(map(lambda v: str(v), param)))})'
         try:
@@ -25,13 +25,12 @@ class ClipsInstance:
         )
         '''
         self.env.build(rule)
-    
+
     def is_fact_exist(self, name: str):
         return bool(self.env.eval(f"(any-factp ((?f {name})) 999)"))
 
     def run(self):
         self.env.run()
-
 
     def reset(self):
         self.env.reset()
