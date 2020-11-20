@@ -3,4 +3,5 @@ cffi==1.14.3
 clipspy==0.3.3
 pycodestyle==2.6.0
 pycparser==2.20
+PySimpleGUI==4.32.1
 toml==0.10.2
