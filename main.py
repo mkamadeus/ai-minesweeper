@@ -19,13 +19,13 @@ import random
 # for f in instance.get_facts():
 #     print(f)
 
-fact1 = ClipsFact(
-    'hans-bot', [ClipsFact('or', [1, 2]), ClipsFact('+', [2, 3])])
-fact2 = ClipsFact(
-    'hans-bot', [ClipsFact('or', [1, 2]), ClipsFact('+', [2, 3])])
-# print(fact.get_fact_string())
-rule = ClipsRule('hans-rule', [fact1], [fact2])
-print(rule.get_rule_string())
+# fact1 = ClipsFact(
+#     'hans-bot', [ClipsFact('or', [1, 2]), ClipsFact('+', [2, 3])])
+# fact2 = ClipsFact(
+#     'hans-bot', [ClipsFact('or', [1, 2]), ClipsFact('+', [2, 3])])
+# # print(fact.get_fact_string())
+# rule = ClipsRule('hans-rule', [fact1], [fact2])
+# print(rule.get_rule_string())
 
 # minesweeper = Minesweeper()
 
