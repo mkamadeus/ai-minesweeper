@@ -5,9 +5,11 @@ from Minesweeper import Minesweeper, MinesweeperStatus
 minesweeper = Minesweeper(size=8, bombs=5)
 is_initialized = False
 
+gui.theme('DarkAmber')
+
 layout = [
-    [gui.Text('Minesweeper')],
-    *[[gui.Button(key=f'tile_{i}_{j}')
+    [gui.Text('Minesweeper', font =('Roboto', 24), justification ='center')],
+    *[[gui.Button(key=f'tile_{i}_{j}', size=(3,0))
        for j in range(minesweeper.size)] for i in range(minesweeper.size)],
 ]
 
