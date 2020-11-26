@@ -1,0 +1,6 @@
+(load minesweeper.clp)
+(bombcount 0 0)
+(reset)
+(facts)
+(exit)
+

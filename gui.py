@@ -8,8 +8,8 @@ is_initialized = False
 gui.theme('DarkAmber')
 
 layout = [
-    [gui.Text('Minesweeper', font =('Roboto', 24), justification ='center')],
-    *[[gui.Button(key=f'tile_{i}_{j}', size=(3,0))
+    [gui.Text('Minesweeper', font=('Roboto', 24), justification='center')],
+    *[[gui.Button(key=f'tile_{i}_{j}', size=(2, 2), pad=(0, 0), font=('Roboto', 12))
        for j in range(minesweeper.size)] for i in range(minesweeper.size)],
 ]
 
@@ -40,6 +40,8 @@ while True:
             for j in range(minesweeper.size):
                 status = ''
                 if(minesweeper.board[i][j].status != -1):
+                    window[f'tile_{i}_{j}'].update(
+                        button_color=('white', 'black'), disabled=True)
                     if(minesweeper.board[i][j].is_bomb):
                         status = 'B'
                     else:

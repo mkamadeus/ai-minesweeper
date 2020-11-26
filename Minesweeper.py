@@ -50,8 +50,8 @@ class Minesweeper:
         offset = [(-1, -1), (-1, 0), (-1, 1), (0, -1),
                   (0, 1), (1, -1), (1, 0), (1, 1)]
 
-        visited = [[False if self.board[i][j].status == -1 else True for i in range(self.size)]
-                   for j in range(self.size)]
+        visited = [[self.board[i][j].status != -1 for j in range(self.size)]
+                   for i in range(self.size)]
         visited[r][c] = True
         queue = []
         queue.append(current_position)
@@ -65,7 +65,6 @@ class Minesweeper:
             bomb_count = self.count_bomb_around((r, c))
             self.board[r][c].status = bomb_count
 
-            print(bomb_count)
             # If no bombs, do BFS
             if(bomb_count == 0):
                 for dr, dc in offset:
