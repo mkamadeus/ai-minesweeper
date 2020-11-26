@@ -4,9 +4,12 @@
   (slot n)
 )
 
+(defglobal 
+  ?*rsize* = 4
+  ?*csize* = 4
+)
+
 (deffacts initial-states
-  (rpositions nil 0 1 2 3 nil)
-  (cpositions nil 0 1 2 3 nil)
   (number (r 0) (c 0) (n 0))
   (number (r 0) (c 1) (n 0))
   (number (r 0) (c 2) (n 0))
@@ -21,34 +24,26 @@
   (number (r 3) (c 1) (n 1))
 )
 
-; (do-for-all-facts ((?f number)) ()
-;   (printout t ?f:r ?f:c)
-; )
-; (deffunction bombcount (?r ?c)
-;   (bind ?count 0)
-;   (return exists (number (r ?r) (c ?c)))
-; )
-
-(defrule checknumber
-  (number (r 0) (c 0))
-  =>
-  (printout t "ada woi" crlf)
+(deffunction isvalid(?r ?c)
+  (return (and(>= ?r 0) (>= ?c 0) (< ?r ?*rsize*) (< ?c ?*csize*)))
 )
 
-(defrule mark-bomb
-  (new-xpositions $? ?ax ?x ?bx $?)
-  (new-ypositions $? ?ay ?y ?by $?)
-  (number ?x ?y ?num)
+(defrule markbomb
+  (number (r ?r) (c ?c) (n ?num))
+  (number (r ?i) (c ?j) (n ?))
 =>
-  (loop-for-count (?i ?ax ?bx) do
-    (loop-for-count (?j ?ay ?by) do
-      (or (!= ?i ?x) (!= ?j ?y))
-        (if (not (exists (bomb ?i ?j) (number ?i ?j)))
-          then
-        (assert (bomb ?x ?y))
-        )
+  (bind ?count 0)
+  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+    (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
+      (if (and 
+        (isvalid ?i ?j) 
+        (not (and (eq ?i ?r) (eq ?j ?c)))
+      ) then
+        (bind ?count (+ ?count 1))
+      )
     )
   )
+  (assert (punten ?r ?c ?count))
 )
 
 ; (deffunction bombcount (?r ?c)
