@@ -68,17 +68,30 @@
   (retract ?f)
 )
 
-(defrule updateunknown
-  ?f <- (unknown (r ?r) (c ?c) (n ?num))
+(defrule marksafe
+  (number (r ?r) (c ?c) (n ?))
   (bomb ?br ?bc)
-  (not (checked ?r ?c))
 =>
   (if (isaround ?br ?bc ?r ?c) then 
-    (retract ?f)
-    (bind ?newnum (- ?num 1))
-    (if (> ?newnum 0) then
-      (assert (unknown (r ?r) (c ?c) (n ?newnum)))
-      (assert (checked ?r ?c))
+    (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+      (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
+        (if (and 
+          (isvalid ?i ?j) 
+          (not (and (eq ?i ?r) (eq ?j ?c)))
+        ) then
+          (assert (safe ?i ?j))
+        )
+      )
     )
   )
 )
+
+(defrule umarksafe
+  ?f <- (safe ?r ?c)
+  (or 
+    (bomb ?r ?c)
+    (number (r ?r) (c ?c) (n ?))
+  )
+=>
+  (retract ?f)
+)  
