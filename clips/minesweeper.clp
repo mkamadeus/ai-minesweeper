@@ -3,6 +3,11 @@
   (slot c)
   (slot n)
 )
+(deftemplate empty
+  (slot r)
+  (slot c)
+  (slot n)
+)
 
 (defglobal 
   ?*rsize* = 4
@@ -22,6 +27,18 @@
   (number (r 2) (c 1) (n 1))
   (number (r 3) (c 0) (n 0))
   (number (r 3) (c 1) (n 1))
+  (empty (r 0) (c 0) (n 0))
+  (empty (r 0) (c 1) (n 0))
+  (empty (r 0) (c 2) (n 0))
+  (empty (r 0) (c 3) (n 0))
+  (empty (r 1) (c 0) (n 0))
+  (empty (r 1) (c 1) (n 1))
+  (empty (r 1) (c 2) (n 2))
+  (empty (r 1) (c 3) (n 2))
+  (empty (r 2) (c 0) (n 0))
+  (empty (r 2) (c 1) (n 2))
+  (empty (r 2) (c 0) (n 0))
+  (empty (r 3) (c 3) (n 2))
 )
 
 (deffunction isvalid(?r ?c)
@@ -30,20 +47,25 @@
 
 (defrule markbomb
   (number (r ?r) (c ?c) (n ?num))
-  (number (r ?i) (c ?j) (n ?))
+  (empty (r ?r) (c ?c) (n ?num))
 =>
-  (bind ?count 0)
   (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
     (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
       (if (and 
         (isvalid ?i ?j) 
         (not (and (eq ?i ?r) (eq ?j ?c)))
       ) then
-        (bind ?count (+ ?count 1))
+        (assert (bomb ?i ?j))
       )
     )
   )
-  (assert (punten ?r ?c ?count))
+)
+
+(defrule unmarkbomb
+  ?f <- (bomb ?r ?c)
+  (number (r ?r) (c ?c) (n ?))
+=>
+  (retract ?f)
 )
 
 ; (deffunction bombcount (?r ?c)
@@ -78,3 +100,13 @@
 ;   )
 ; )
 
+; (deffacts initial-states
+;   (number (r 0) (c 0) (n 0))
+; )
+
+; (defrule test
+;   ?f <- (number (r ?x) (c ?y) (n ?num))
+; =>
+;   (retract ?f)
+;   (assert (punten 123123123))
+; )
