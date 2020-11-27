@@ -3,13 +3,14 @@
   (slot c)
   (slot n)
 )
+
 (deftemplate unknown
   (slot r)
   (slot c)
   (slot n)
 )
 
-(defglobal 
+(defglobal
   ?*rsize* = 4
   ?*csize* = 4
 )
