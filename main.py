@@ -1,6 +1,7 @@
 from Minesweeper import Minesweeper
 from ClipsInstance import ClipsFact, ClipsInstance, ClipsRule
 import random
+import clips
 
 # instance = ClipsInstance()
 
@@ -31,3 +32,19 @@ import random
 
 # minesweeper.initialize_board((2, 2))
 # minesweeper.print_board()
+minesweeper = Minesweeper(size=4)
+minesweeper.initialize_board((0, 0))
+minesweeper.inference()
+
+# env = clips.Environment()
+# template_string = """
+# (deftemplate template-fact
+# (slot template-slot (type SYMBOL)))
+# """
+# env.build(template_string)
+# template = env.find_template('template-fact')
+# new_fact = template.new_fact()
+# new_fact['template-slot'] = clips.Symbol('a-symbol')
+# new_fact.assertit()
+# for fact in env.facts():
+#     print(fact)

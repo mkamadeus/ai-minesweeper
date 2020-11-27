@@ -1,6 +1,8 @@
-from typing import Tuple
+from ClipsInstance import ClipsInstance
+from typing import List, Tuple
 from enum import Enum
 import random
+import clips
 
 
 class Minesweeper:
@@ -9,6 +11,7 @@ class Minesweeper:
                       for _ in range(size)]
         self.size = size
         self.bombs = bombs
+        self.known_bombs = []
         self.status = MinesweeperStatus.PLAYING
 
     def initialize_board(self, starting_position: Tuple[int, int]):
@@ -16,14 +19,23 @@ class Minesweeper:
         Initialize board after click on starting position.
         '''
 
-        for _ in range(self.bombs):
-            r, c = starting_position
-            while(starting_position == (r, c) or self.board[r][c].is_bomb):
-                r, c = random.randint(
-                    0, self.size - 1), random.randint(0, self.size - 1)
-            self.board[r][c].is_bomb = True
+        # for _ in range(self.bombs):
+        #     r, c = starting_position
+        #     while(starting_position == (r, c) or self.board[r][c].is_bomb):
+        #         r, c = random.randint(
+        #             0, self.size - 1), random.randint(0, self.size - 1)
+        #     self.board[r][c].is_bomb = True
+
+        self.board[2][2].is_bomb = True
 
         self.reveal(starting_position)
+
+    def is_win(self):
+        for i in range(self.size):
+            for j in range(self.size):
+                if (self.board[i][j].status == -1 and not self.board[i][j].is_bomb):
+                    return
+        self.status = MinesweeperStatus.WIN
 
     def is_tile_valid(self, coor: Tuple[int, int]) -> bool:
         '''
@@ -82,6 +94,9 @@ class Minesweeper:
         self.board[r][c].is_marked = not self.board[r][c].is_marked
 
     def print_board(self):
+        '''
+        Outputs board in a console
+        '''
         for row in self.board:
             for tile in row:
                 print(f'{tile.status}{"B" if tile.is_bomb else ""}\t', end='')
@@ -97,6 +112,175 @@ class Minesweeper:
                 count += 1
 
         return count
+
+    def unknown_tiles_around(self, current_position: Tuple[int, int]) -> int:
+        offset = [(-1, -1), (-1, 0), (-1, 1), (0, -1),
+                  (0, 1), (1, -1), (1, 0), (1, 1)]
+        r, c = current_position
+        count = 0
+        for dr, dc in offset:
+            if (self.is_tile_valid((r+dr, c+dc)) and self.board[r+dr][c+dc].status == -1):
+                count += 1
+
+        return count
+
+    def inference(self) -> None:
+        with open('./clips/minesweeper.clp', 'r+') as file:
+            data = file.read()
+
+            numbers: List[Tuple[int, int, int]] = []
+            unknowns: List[Tuple[int, int, int]] = []
+            for i, row in enumerate(self.board):
+                for j, tile in enumerate(row):
+                    if (tile.status != -1):
+                        numbers.append((i, j, tile.status))
+                        unknowns.append(
+                            (i, j, self.unknown_tiles_around((i, j))))
+
+            env = clips.Environment()
+            env.build('''
+(deftemplate number
+  (slot r)
+  (slot c)
+  (slot n)
+)
+            ''')
+            env.build('''
+(deftemplate unknown
+  (slot r)
+  (slot c)
+  (slot n)
+)
+            ''')
+
+            number = env.find_template('number')
+            for r, c, n in numbers:
+                new_fact = number.new_fact()
+                new_fact['r'] = r
+                new_fact['c'] = c
+                new_fact['n'] = n
+                new_fact.assertit()
+
+            for r, c in self.known_bombs:
+                env.assert_string(f"(bombs {r} {c})")
+
+            unknown = env.find_template('unknown')
+            for r, c, n in unknowns:
+                new_fact = unknown.new_fact()
+                new_fact['r'] = r
+                new_fact['c'] = c
+                new_fact['n'] = n
+                new_fact.assertit()
+
+            env.build(
+                f'(defglobal\n  ?*rsize* = {self.size}\n  ?*csize* = {self.size}\n)\n')
+
+            env.build('''
+(deffunction isvalid(?r ?c)
+  (return (and(>= ?r 0) (>= ?c 0) (< ?r ?*rsize*) (< ?c ?*csize*)))
+)
+            ''')
+
+            env.build('''
+(deffunction isaround(?r ?c ?br ?bc)
+  (return (and (and (>= ?br (- ?r 1)) (<= ?br (+ ?r 1))) (and (>= ?bc (- ?c 1)) (<= ?bc (+ ?c 1)))))
+)
+            ''')
+
+            env.build('''
+(defrule markbomb
+  (number (r ?r) (c ?c) (n ?num))
+  (unknown (r ?r) (c ?c) (n ?num))
+  (test (> ?num 0))
+=>
+  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+    (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
+      (if (and
+        (isvalid ?i ?j)
+        (not (and (eq ?i ?r) (eq ?j ?c)))
+      ) then
+        (assert (bomb ?i ?j))
+      )
+    )
+  )
+)
+            ''')
+
+            env.build('''
+(defrule unmarkbomb
+  ?f <- (bomb ?r ?c)
+  (number (r ?r) (c ?c) (n ?))
+=>
+  (retract ?f)
+)
+            ''')
+
+            env.build('''
+(defrule marksafe
+  (number (r ?r) (c ?c) (n ?))
+  (bomb ?br ?bc)
+=>
+  (if (isaround ?br ?bc ?r ?c) then
+    (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+      (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
+        (if (and
+          (isvalid ?i ?j)
+          (not (and (eq ?i ?r) (eq ?j ?c)))
+        ) then
+          (assert (safe ?i ?j))
+        )
+      )
+    )
+  )
+)
+            ''')
+
+            env.build('''
+(defrule umarksafe
+  ?f <- (safe ?r ?c)
+  (or
+    (bomb ?r ?c)
+    (number (r ?r) (c ?c) (n ?))
+  )
+=>
+  (retract ?f)
+)
+            ''')
+            # for t in env.templates():
+            #     print(t)
+            # for t in env.templates():
+            #     print(t)
+
+            # data += f'(deffacts initial-fact\n{numbers_string}\n{unknown_string}\n)\n'
+            # data += f'(defglobal\n  ?*rsize* = {self.size}\n  ?*csize* = {self.size}\n)\n'
+
+            # print(data)
+
+            env.run()
+
+            # Execute action
+            for f in env.facts():
+                if('bomb' in f.__repr__()):
+                    bomb_fact = ' '.join(f.__repr__().split()[2:])
+                    _, r, c = bomb_fact[1:-1].split()
+                    r, c = int(r), int(c)
+                    self.known_bombs.append((r, c))
+                    self.board[r][c].is_marked = True
+                    # pass
+
+                if('safe' in f.__repr__()):
+                    safe_fact = ' '.join(f.__repr__().split()[2:])
+                    _, r, c = safe_fact[1:-1].split()
+                    r, c = int(r), int(c)
+                    self.reveal((r, c))
+                    # print(data)
+
+                    # def initialize_state_clips(starting_position: Tuple[int, int]):
+                    #     self.initialize_board(starting_position)
+
+                    #     with open('./clips/minesweeper.clp', 'a') as file:
+
+            self.is_win()
 
 
 class Tile:
