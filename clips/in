@@ -1,5 +1,6 @@
 (load minesweeper.clp)
 (reset)
+(facts)
 (run)
 (facts)
 (exit)
