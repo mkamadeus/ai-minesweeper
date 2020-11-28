@@ -1,3 +1,4 @@
+from TestcaseGenerator import TestcaseGenerator
 from Minesweeper import Minesweeper
 from ClipsInstance import ClipsFact, ClipsInstance, ClipsRule
 import random
@@ -32,9 +33,14 @@ import clips
 
 # minesweeper.initialize_board((2, 2))
 # minesweeper.print_board()
-minesweeper = Minesweeper(size=4)
-minesweeper.initialize_board((0, 0))
-minesweeper.inference()
+# minesweeper = Minesweeper(size=4)
+# minesweeper.initialize_board((0, 0))
+# print(minesweeper.is_solveable())
+
+# gen = TestcaseGenerator((6, 8), (2, 4))
+# for i in range(100):
+#     gen.generate()
+# minesweeper.inference()
 
 # env = clips.Environment()
 # template_string = """

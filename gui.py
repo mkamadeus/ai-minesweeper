@@ -1,9 +1,22 @@
+import random
 import PySimpleGUI as gui
 from PySimpleGUI.PySimpleGUI import WINDOW_CLOSED
 from Minesweeper import Minesweeper, MinesweeperStatus
 import time
+import os
 
-minesweeper = Minesweeper(size=4)
+test_case = os.listdir('./test')
+with open(f'./test/{test_case[random.randint(0, len(test_case))]}', 'r') as f:
+    info = list(map(lambda s: s.strip(), f.readlines()))
+    size = int(info[0])
+    bombs = int(info[1])
+    locations = []
+    for i, d in enumerate(info[2:]):
+        tmp = d.split()
+        locations.append((int(tmp[0]), int(tmp[1])))
+    # print(locations)
+
+minesweeper = Minesweeper(locations=locations, size=size, bombs=bombs)
 is_initialized = False
 
 gui.theme('DarkAmber')
@@ -29,7 +42,7 @@ while True:
         # print(r, c, minesweeper.board[r][c].is_bomb)
 
         if(not is_initialized):
-            minesweeper.initialize_board((0, 0))
+            minesweeper.initialize_board()
             is_initialized = True
         else:
             minesweeper.inference()
