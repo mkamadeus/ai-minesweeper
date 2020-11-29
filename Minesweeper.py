@@ -188,7 +188,7 @@ class Minesweeper:
         r, c = current_position
         count = 0
         for dr, dc in offset:
-            if (self.is_tile_valid((r+dr, c+dc)) and self.board[r+dr][c+dc].status == -1):
+            if (self.is_tile_valid((r+dr, c+dc)) and (self.board[r+dr][c+dc].status == -1 or (r+dr, c+dc) in self.known_bombs)):
                 count += 1
 
         return count
@@ -222,6 +222,12 @@ class Minesweeper:
 (slot n)
 )
         ''')
+        env.build('''
+(deftemplate bomb
+(slot r)
+(slot c)
+)
+        ''')
 
         number = env.find_template('number')
         for r, c, n in numbers:
@@ -231,15 +237,19 @@ class Minesweeper:
             new_fact['n'] = n
             new_fact.assertit()
 
-        for r, c in self.known_bombs:
-            env.assert_string(f"(bombs {r} {c})")
-
         unknown = env.find_template('unknown')
         for r, c, n in unknowns:
             new_fact = unknown.new_fact()
             new_fact['r'] = r
             new_fact['c'] = c
             new_fact['n'] = n
+            new_fact.assertit()
+
+        bomb = env.find_template('bomb')
+        for r, c in self.known_bombs:
+            new_fact = bomb.new_fact()
+            new_fact['r'] = r
+            new_fact['c'] = c
             new_fact.assertit()
 
         env.build(
@@ -259,61 +269,73 @@ class Minesweeper:
 
         env.build('''
 (defrule markbomb
-(number (r ?r) (c ?c) (n ?num))
-(unknown (r ?r) (c ?c) (n ?num))
-(test (> ?num 0))
+  (number (r ?r) (c ?c) (n ?num))
+  (unknown (r ?r) (c ?c) (n ?num))
+  (test (> ?num 0))
 =>
-(loop-for-count (?i (- ?r 1) (+ ?r 1)) do
-(loop-for-count (?j (- ?c 1) (+ ?c 1)) do
-    (if (and
-    (isvalid ?i ?j)
-    (not (and (eq ?i ?r) (eq ?j ?c)))
-    ) then
-    (assert (bomb ?i ?j))
+  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+    (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
+      (if (and
+        (isvalid ?i ?j)
+        (not (and (eq ?i ?r) (eq ?j ?c)))
+      ) then
+        (assert (bomb (r ?i) (c ?j)))
+      )
     )
-)
-)
+  )
 )
         ''')
 
         env.build('''
-(defrule unmarkbomb
-?f <- (bomb ?r ?c)
-(number (r ?r) (c ?c) (n ?))
+(defrule countbombaround
+  (number (r ?r) (c ?c) (n ?num))
 =>
-(retract ?f)
+  (if (!= ?num 0) then
+    (bind ?count (length$ (find-all-facts ((?f bomb)) (isaround ?r ?c ?f:r ?f:c) )))
+    (printout t ?count " " ?r " " ?c crlf)
+    (if (!= ?count 0) then
+      (assert (bombaround ?r ?c ?count))
+    )
+  )
+)
+        ''')
+        env.build('''
+(defrule unmarkbomb
+  ?f <- (bomb (r ?r) (c ?c))
+  (number (r ?r) (c ?c) (n ?))
+=>
+  (retract ?f)
 )
         ''')
 
         env.build('''
 (defrule marksafe
-(number (r ?r) (c ?c) (n ?))
-(bomb ?br ?bc)
+  (number (r ?r) (c ?c) (n ?num))
+  (bombaround ?r ?c ?num)
 =>
-(if (isaround ?br ?bc ?r ?c) then
-(loop-for-count (?i (- ?r 1) (+ ?r 1)) do
+  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
     (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
-    (if (and
+      (if (and
         (isvalid ?i ?j)
         (not (and (eq ?i ?r) (eq ?j ?c)))
-    ) then
+      ) then
         (assert (safe ?i ?j))
+      )
     )
-    )
-)
-)
+  )
 )
         ''')
 
         env.build('''
 (defrule umarksafe
-?f <- (safe ?r ?c)
-(or
-(bomb ?r ?c)
-(number (r ?r) (c ?c) (n ?))
-)
+  ?f <- (safe ?r ?c)
+  (
+    or
+    (bomb (r ?r) (c ?c))
+    (number (r ?r) (c ?c) (n ?))
+  )
 =>
-(retract ?f)
+  (retract ?f)
 )
         ''')
         # for t in env.templates():
@@ -330,16 +352,20 @@ class Minesweeper:
 
         # Execute action
         for f in env.facts():
-            print(f)
-            if('bomb' in f.__repr__()):
+            print(f.__repr__())
+            if('bomb (' in f.__repr__()):
+                print(f)
+
                 bomb_fact = ' '.join(f.__repr__().split()[2:])
-                _, r, c = bomb_fact[1:-1].split()
+                bomb_fact = bomb_fact[1:-1].split()
+                r, c = bomb_fact[2][:-1], bomb_fact[4][:-1]
                 r, c = int(r), int(c)
                 self.known_bombs.append((r, c))
                 self.board[r][c].is_marked = True
                 # pass
 
             if('safe' in f.__repr__()):
+                print(f)
                 safe_fact = ' '.join(f.__repr__().split()[2:])
                 _, r, c = safe_fact[1:-1].split()
                 r, c = int(r), int(c)
