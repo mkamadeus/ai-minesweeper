@@ -360,7 +360,8 @@ class Minesweeper:
                 bomb_fact = bomb_fact[1:-1].split()
                 r, c = bomb_fact[2][:-1], bomb_fact[4][:-1]
                 r, c = int(r), int(c)
-                self.known_bombs.append((r, c))
+                if((r, c) not in self.known_bombs):
+                    self.known_bombs.append((r, c))
                 self.board[r][c].is_marked = True
                 # pass
 

@@ -55,13 +55,18 @@ while True:
         for i in range(minesweeper.size):
             for j in range(minesweeper.size):
                 status = ''
+                if((i, j) in minesweeper.known_bombs):
+                    status = 'M'
+
                 if(minesweeper.board[i][j].status != -1):
                     window[f'tile_{i}_{j}'].update(
                         button_color=('white', 'black'), disabled=True)
+
                     if(minesweeper.board[i][j].is_bomb):
                         status = 'B'
                     else:
                         status = str(minesweeper.board[i][j].status)
+
                 window[f'tile_{i}_{j}'].update(status)
 
         if(minesweeper.status == MinesweeperStatus.LOSE):
