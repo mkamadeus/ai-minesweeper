@@ -37,9 +37,9 @@ import clips
 # minesweeper.initialize_board((0, 0))
 # print(minesweeper.is_solveable())
 
-# gen = TestcaseGenerator((6, 8), (2, 4))
-# for i in range(100):
-#     gen.generate()
+gen = TestcaseGenerator((6, 8), (4, 8))
+for i in range(50):
+    gen.generate()
 # minesweeper.inference()
 
 # env = clips.Environment()

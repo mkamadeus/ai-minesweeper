@@ -14,7 +14,7 @@ class TestcaseGenerator:
 
         print(size, bombs)
 
-        ms = Minesweeper(size, bombs)
+        ms = Minesweeper([], size, bombs)
         ms.print_board()
         ms.randomize_bomb()
         ms.print_board()

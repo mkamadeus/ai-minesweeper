@@ -330,6 +330,7 @@ class Minesweeper:
 
         # Execute action
         for f in env.facts():
+            print(f)
             if('bomb' in f.__repr__()):
                 bomb_fact = ' '.join(f.__repr__().split()[2:])
                 _, r, c = bomb_fact[1:-1].split()

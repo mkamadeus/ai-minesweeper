@@ -5,16 +5,21 @@ from Minesweeper import Minesweeper, MinesweeperStatus
 import time
 import os
 
-test_case = os.listdir('./test')
-with open(f'./test/{test_case[random.randint(0, len(test_case))]}', 'r') as f:
-    info = list(map(lambda s: s.strip(), f.readlines()))
-    size = int(info[0])
-    bombs = int(info[1])
-    locations = []
-    for i, d in enumerate(info[2:]):
-        tmp = d.split()
-        locations.append((int(tmp[0]), int(tmp[1])))
-    # print(locations)
+size = int(input())
+bombs = int(input())
+locations = [list(map(int, input().split(' '))) for _ in range(bombs)]
+
+# test_case = os.listdir('./test')
+# with open(f'./test/{test_case[random.randint(0, len(test_case))]}', 'r') as f:
+#     info = list(map(lambda s: s.strip(), f.readlines()))
+#     size = int(info[0])
+#     bombs = int(info[1])
+#     locations = []
+#     for i, d in enumerate(info[2:]):
+#         tmp = d.split()
+#         locations.append((int(tmp[0]), int(tmp[1])))
+# print(locations)
+
 
 minesweeper = Minesweeper(locations=locations, size=size, bombs=bombs)
 is_initialized = False
