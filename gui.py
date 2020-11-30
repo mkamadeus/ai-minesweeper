@@ -1,3 +1,5 @@
+import time
+import random
 import PySimpleGUI as gui
 from PySimpleGUI.PySimpleGUI import WINDOW_CLOSED
 from Minesweeper import Minesweeper, MinesweeperStatus
@@ -10,57 +12,121 @@ locations = [list(map(int, input().split(', '))) for _ in range(bombs)]
 # Create new minesweeper object
 minesweeper = Minesweeper(locations=locations, size=size, bombs=bombs)
 is_initialized = False
+is_manual = False
 
+# Initialize all GUI components
 gui.theme('DarkAmber')
 
 layout = [
     [gui.Text('Minesweeper', font=('Roboto', 24), justification='center')],
     *[[gui.Button(key=f'tile_{i}_{j}', size=(2, 2), pad=(0, 0), font=('Roboto', 12))
        for j in range(minesweeper.size)] for i in range(minesweeper.size)],
-    [gui.Button('Run!')]
+    [gui.Button('Step', disabled=False, key="-step-"), gui.Button(
+        'Manual Toggle', key="-manual-"), gui.Button('Simulate', key='-simulate-')]
+]
+
+# Generate window application
+window = gui.Window('Minesweeper', layout)
+
+# Lose and Win Random Messages
+lose_message = [
+    'Yah kalah :(',
+    'Anda/AI kalah, silakan coba lagi.',
+    'あなたが失う!',
+    'Anda cupu. Mati ajalah coy'
+]
+
+win_message = [
+    'Yey menang :)',
+    'UwU menang dong :>',
+    'あなたが勝つ!',
+    'Anda jago juga!'
 ]
 
 
-window = gui.Window('Minesweeper', layout)
+def update_gui():
+    """
+    Procedure for updating GUI
+    """
+    for i in range(minesweeper.size):
+        for j in range(minesweeper.size):
+            status = ''
+            if((i, j) in minesweeper.known_bombs):
+                status = 'M'
 
+            if(minesweeper.board[i][j].status != -1):
+                if(minesweeper.board[i][j].status == 0):
+                    window[f'tile_{i}_{j}'].update(
+                        button_color=('white', 'gray'), disabled=True)
+                else:
+                    window[f'tile_{i}_{j}'].update(
+                        button_color=('red', 'gray'), disabled=True)
+
+                if(minesweeper.board[i][j].is_bomb):
+                    status = 'B'
+                else:
+                    status = str(minesweeper.board[i][j].status)
+
+            window[f'tile_{i}_{j}'].update(status)
+
+
+# While event running
 while True:
     event, values = window.read()
-    if(event == WINDOW_CLOSED):
+
+    # Get event close app
+    if (event == WINDOW_CLOSED):
         break
 
-    if(event is not None):
+    if(event == '-simulate-'):
+        while minesweeper.status == MinesweeperStatus.PLAYING:
+            if(not is_initialized):
+                minesweeper.initialize_board()
+                is_initialized = True
+                window['-step-'].update(disabled=is_manual,
+                                        button_color=('white', 'gray'))
+                window['-manual-'].update(disabled=is_manual,
+                                          button_color=('white', 'gray'))
+                window['-simulate-'].update(disabled=is_manual,
+                                            button_color=('white', 'gray'))
+            else:
+                minesweeper.inference()
+            update_gui()
+            window.refresh()
+            time.sleep(0.5)
+
+    # If manual toggled...
+    if (event == '-manual-'):
+        is_manual = not is_manual
+        window['-step-'].update(disabled=is_manual,
+                                button_color=('white', 'gray'))
+
+    if (is_manual and 'tile' in event):
+        if(not is_initialized):
+            minesweeper.initialize_board()
+            is_initialized = True
+        else:
+            r, c = list(map(int, event.split('_')[1:]))
+            minesweeper.reveal((r, c))
+
+    # If manual is not toggled and
+    if (event == '-step-' and not is_manual):
         if(not is_initialized):
             minesweeper.initialize_board()
             is_initialized = True
         else:
             minesweeper.inference()
 
-        for i in range(minesweeper.size):
-            for j in range(minesweeper.size):
-                status = ''
-                if((i, j) in minesweeper.known_bombs):
-                    status = 'M'
+    update_gui()
 
-                if(minesweeper.board[i][j].status != -1):
-                    window[f'tile_{i}_{j}'].update(
-                        button_color=('white', 'black'), disabled=True)
-
-                    if(minesweeper.board[i][j].is_bomb):
-                        status = 'B'
-                    else:
-                        status = str(minesweeper.board[i][j].status)
-
-                window[f'tile_{i}_{j}'].update(status)
-
-        if(minesweeper.status == MinesweeperStatus.LOSE):
-            gui.popup('AI kalah! Silahkan coba lagi!', title='AI kalah!')
-            break
-        elif(minesweeper.status == MinesweeperStatus.WIN):
-            gui.popup('AI menang! Skynet sudah ada di depan mata Anda!',
-                      title='AI menang!')
-            break
-
-        # time.sleep(1)
-        minesweeper.print_board()
+    # If the minesweeper state is Terminal State
+    if (minesweeper.status == MinesweeperStatus.LOSE):
+        gui.popup(lose_message[random.randint(
+            0, len(lose_message) - 1)], title='You lose!')
+        break
+    elif (minesweeper.status == MinesweeperStatus.WIN):
+        gui.popup(win_message[random.randint(0, len(win_message) - 1)],
+                  title='You win!')
+        break
 
 window.close()

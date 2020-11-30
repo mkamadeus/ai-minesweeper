@@ -214,8 +214,6 @@ class Minesweeper:
 
             # If a bomb fact is detected...
             if('bomb (' in f.__repr__()):
-                print(f)
-
                 bomb_fact = ' '.join(f.__repr__().split()[2:])
                 bomb_fact = bomb_fact[1:-1].split()
                 r, c = bomb_fact[2][:-1], bomb_fact[4][:-1]
@@ -226,7 +224,6 @@ class Minesweeper:
 
             # If a safe fact is detected
             if('safe' in f.__repr__()):
-                print(f)
                 safe_fact = ' '.join(f.__repr__().split()[2:])
                 _, r, c = safe_fact[1:-1].split()
                 r, c = int(r), int(c)
