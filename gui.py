@@ -1,25 +1,10 @@
-import random
 import PySimpleGUI as gui
 from PySimpleGUI.PySimpleGUI import WINDOW_CLOSED
 from Minesweeper import Minesweeper, MinesweeperStatus
-import time
-import os
 
 size = int(input())
 bombs = int(input())
-locations = [list(map(int, input().split(' '))) for _ in range(bombs)]
-
-# test_case = os.listdir('./test')
-# with open(f'./test/{test_case[random.randint(0, len(test_case))]}', 'r') as f:
-#     info = list(map(lambda s: s.strip(), f.readlines()))
-#     size = int(info[0])
-#     bombs = int(info[1])
-#     locations = []
-#     for i, d in enumerate(info[2:]):
-#         tmp = d.split()
-#         locations.append((int(tmp[0]), int(tmp[1])))
-# print(locations)
-
+locations = [list(map(int, input().split(', '))) for _ in range(bombs)]
 
 minesweeper = Minesweeper(locations=locations, size=size, bombs=bombs)
 is_initialized = False
@@ -30,7 +15,7 @@ layout = [
     [gui.Text('Minesweeper', font=('Roboto', 24), justification='center')],
     *[[gui.Button(key=f'tile_{i}_{j}', size=(2, 2), pad=(0, 0), font=('Roboto', 12))
        for j in range(minesweeper.size)] for i in range(minesweeper.size)],
-    [gui.Button('lesgo')]
+    [gui.Button('Run!')]
 ]
 
 
@@ -42,10 +27,6 @@ while True:
         break
 
     if(event is not None):
-        # r, c = list(map(lambda v: int(v), event.split('_')[1:]))
-
-        # print(r, c, minesweeper.board[r][c].is_bomb)
-
         if(not is_initialized):
             minesweeper.initialize_board()
             is_initialized = True
@@ -70,10 +51,10 @@ while True:
                 window[f'tile_{i}_{j}'].update(status)
 
         if(minesweeper.status == MinesweeperStatus.LOSE):
-            gui.popup('Cupu kon cok')
+            gui.popup('AI kalah! Silahkan coba lagi!', title='AI kalah!')
             break
         elif(minesweeper.status == MinesweeperStatus.WIN):
-            gui.popup('Kon jago euy')
+            gui.popup('AI menang! Skynet sudah ada di depan mata Anda!', title='AI menang!')
             break
 
         # time.sleep(1)
