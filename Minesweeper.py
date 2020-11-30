@@ -2,6 +2,7 @@ from typing import List, Tuple
 from enum import Enum
 import random
 import clips
+import os
 
 
 class Minesweeper:
@@ -111,7 +112,7 @@ class Minesweeper:
 
     def toggle_marked(self, clicked_position: Tuple[int, int]):
         '''
-        Toggle mark status
+        Toggle mark status.
         '''
 
         r, c = clicked_position
@@ -170,142 +171,48 @@ class Minesweeper:
                         (i, j, self.unknown_tiles_around((i, j))))
 
         env = clips.Environment()
-        env.build('''
-(deftemplate number
-(slot r)
-(slot c)
-(slot n)
-)
-        ''')
-        env.build('''
-(deftemplate unknown
-(slot r)
-(slot c)
-(slot n)
-)
-        ''')
-        env.build('''
-(deftemplate bomb
-(slot r)
-(slot c)
-)
-        ''')
+        directory = os.listdir('./minesweeper_inference')
 
-        number = env.find_template('number')
-        for r, c, n in numbers:
-            new_fact = number.new_fact()
-            new_fact['r'] = r
-            new_fact['c'] = c
-            new_fact['n'] = n
-            new_fact.assertit()
+        for i, filename in enumerate(directory):
 
-        unknown = env.find_template('unknown')
-        for r, c, n in unknowns:
-            new_fact = unknown.new_fact()
-            new_fact['r'] = r
-            new_fact['c'] = c
-            new_fact['n'] = n
-            new_fact.assertit()
+            # If templates already defined...
+            if(i == 3):
+                number = env.find_template('number')
+                for r, c, n in numbers:
+                    new_fact = number.new_fact()
+                    new_fact['r'] = r
+                    new_fact['c'] = c
+                    new_fact['n'] = n
+                    new_fact.assertit()
 
-        bomb = env.find_template('bomb')
-        for r, c in self.known_bombs:
-            new_fact = bomb.new_fact()
-            new_fact['r'] = r
-            new_fact['c'] = c
-            new_fact.assertit()
+                unknown = env.find_template('unknown')
+                for r, c, n in unknowns:
+                    new_fact = unknown.new_fact()
+                    new_fact['r'] = r
+                    new_fact['c'] = c
+                    new_fact['n'] = n
+                    new_fact.assertit()
 
-        env.build(
-            f'(defglobal\n  ?*rsize* = {self.size}\n  ?*csize* = {self.size}\n)\n')
+                bomb = env.find_template('bomb')
+                for r, c in self.known_bombs:
+                    new_fact = bomb.new_fact()
+                    new_fact['r'] = r
+                    new_fact['c'] = c
+                    new_fact.assertit()
 
-        env.build('''
-(deffunction isvalid(?r ?c)
-(return (and(>= ?r 0) (>= ?c 0) (< ?r ?*rsize*) (< ?c ?*csize*)))
-)
-        ''')
+                env.build(
+                    f'(defglobal\n  ?*rsize* = {self.size}\n  ?*csize* = {self.size}\n)\n')
 
-        env.build('''
-(deffunction isaround(?r ?c ?br ?bc)
-(return (and (and (>= ?br (- ?r 1)) (<= ?br (+ ?r 1))) (and (>= ?bc (- ?c 1)) (<= ?bc (+ ?c 1)))))
-)
-        ''')
-
-        env.build('''
-(defrule markbomb
-  (number (r ?r) (c ?c) (n ?num))
-  (unknown (r ?r) (c ?c) (n ?num))
-  (test (> ?num 0))
-=>
-  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
-    (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
-      (if (and
-        (isvalid ?i ?j)
-        (not (and (eq ?i ?r) (eq ?j ?c)))
-      ) then
-        (assert (bomb (r ?i) (c ?j)))
-      )
-    )
-  )
-)
-        ''')
-
-        env.build('''
-(defrule countbombaround
-  (number (r ?r) (c ?c) (n ?num))
-=>
-  (if (!= ?num 0) then
-    (bind ?count (length$ (find-all-facts ((?f bomb)) (isaround ?r ?c ?f:r ?f:c) )))
-    (printout t ?count " " ?r " " ?c crlf)
-    (if (!= ?count 0) then
-      (assert (bombaround ?r ?c ?count))
-    )
-  )
-)
-        ''')
-        env.build('''
-(defrule unmarkbomb
-  ?f <- (bomb (r ?r) (c ?c))
-  (number (r ?r) (c ?c) (n ?))
-=>
-  (retract ?f)
-)
-        ''')
-
-        env.build('''
-(defrule marksafe
-  (number (r ?r) (c ?c) (n ?num))
-  (bombaround ?r ?c ?num)
-=>
-  (loop-for-count (?i (- ?r 1) (+ ?r 1)) do
-    (loop-for-count (?j (- ?c 1) (+ ?c 1)) do
-      (if (and
-        (isvalid ?i ?j)
-        (not (and (eq ?i ?r) (eq ?j ?c)))
-      ) then
-        (assert (safe ?i ?j))
-      )
-    )
-  )
-)
-        ''')
-
-        env.build('''
-(defrule umarksafe
-  ?f <- (safe ?r ?c)
-  (
-    or
-    (bomb (r ?r) (c ?c))
-    (number (r ?r) (c ?c) (n ?))
-  )
-=>
-  (retract ?f)
-)
-        ''')
+            # Read rules/templates/functions from file
+            with open(f'./minesweeper_inference/{filename}', 'r+') as clp:
+                env.build(clp.read())
 
         env.run()
 
         # Execute action
         for f in env.facts():
-            print(f.__repr__())
+
+            # If a bomb fact is detected...
             if('bomb (' in f.__repr__()):
                 print(f)
 
@@ -316,17 +223,17 @@ class Minesweeper:
                 if((r, c) not in self.known_bombs):
                     self.known_bombs.append((r, c))
                 self.board[r][c].is_marked = True
-                # pass
 
+            # If a safe fact is detected
             if('safe' in f.__repr__()):
                 print(f)
                 safe_fact = ' '.join(f.__repr__().split()[2:])
                 _, r, c = safe_fact[1:-1].split()
                 r, c = int(r), int(c)
                 self.reveal((r, c))
-                
-        self.is_win()
 
+        # Change status if lose/win
+        self.is_win()
 
 
 class Tile:

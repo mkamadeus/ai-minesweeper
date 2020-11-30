@@ -2,10 +2,12 @@ import PySimpleGUI as gui
 from PySimpleGUI.PySimpleGUI import WINDOW_CLOSED
 from Minesweeper import Minesweeper, MinesweeperStatus
 
+# Get all arguments input from test case
 size = int(input())
 bombs = int(input())
 locations = [list(map(int, input().split(', '))) for _ in range(bombs)]
 
+# Create new minesweeper object
 minesweeper = Minesweeper(locations=locations, size=size, bombs=bombs)
 is_initialized = False
 
@@ -54,7 +56,8 @@ while True:
             gui.popup('AI kalah! Silahkan coba lagi!', title='AI kalah!')
             break
         elif(minesweeper.status == MinesweeperStatus.WIN):
-            gui.popup('AI menang! Skynet sudah ada di depan mata Anda!', title='AI menang!')
+            gui.popup('AI menang! Skynet sudah ada di depan mata Anda!',
+                      title='AI menang!')
             break
 
         # time.sleep(1)
