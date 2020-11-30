@@ -53,14 +53,16 @@ def update_gui():
             status = ''
             if((i, j) in minesweeper.known_bombs):
                 status = 'M'
+                window[f'tile_{i}_{j}'].update(
+                    button_color=("#000000", "#faa228"))
 
             if(minesweeper.board[i][j].status != -1):
                 if(minesweeper.board[i][j].status == 0):
                     window[f'tile_{i}_{j}'].update(
-                        button_color=('white', 'gray'), disabled=True)
+                        button_color=('#555555', 'gray'))
                 else:
                     window[f'tile_{i}_{j}'].update(
-                        button_color=('red', 'gray'), disabled=True)
+                        button_color=('#ffd000', '#333333'))
 
                 if(minesweeper.board[i][j].is_bomb):
                     status = 'B'
@@ -97,7 +99,7 @@ while True:
 
     # If manual toggled...
     if (event == '-manual-'):
-        is_manual = not is_manual
+        is_manual = True
         window['-step-'].update(disabled=is_manual,
                                 button_color=('white', 'gray'))
 
