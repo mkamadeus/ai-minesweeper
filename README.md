@@ -1,7 +1,7 @@
 # Minesweeper Agent Based on Knowledge Based System
 
 <p align="center">
-    <img src="screenshots/minesweeper-3.png">
+    <img src="screenshots/minesweeper-4.png">
 </p>
 
 ## Deskripsi Permainan
